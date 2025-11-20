@@ -29,46 +29,45 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- /*FROM ACTIVITY 1 WEEK 2 */
+ /*FROM ACTIVITY 1 WEEK 2 - originally, code has been changed since but it was built on the lab solution */
 
 import java.io.*;
 import java.net.*;
 
 public class ChatClient {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        String host = args.length > 0 ? args[0] : "localhost";
+        int    port = args.length > 1 ? Integer.parseInt(args[1]) : 43221;
 
-        /**
-         * Remove the command line parameter reading, and set the Socket
-         * parameters manually.
-         */
+        try (Socket socket = new Socket(host, port)) {
+            System.out.println("Connected to " + host + ":" + port);
 
-        String hostName = "localhost";
-        int portNumber = 43221;
+            BufferedReader in  = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+            PrintWriter    out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+            BufferedReader kb  = new BufferedReader(new InputStreamReader(System.in));
 
-        try (
-            // The clinet socket must then be set to use the man parameters.
-            Socket clientSocket = new Socket(hostName, portNumber);
-            PrintWriter out =
-                new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader in =
-                new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream()));
-            BufferedReader stdIn =
-                new BufferedReader(
-                    new InputStreamReader(System.in))
-        ) {
-            String userInput;
-            while ((userInput = stdIn.readLine()) != null) {
-                out.println(userInput);
-                System.out.println("echo: " + in.readLine());
+            // background reader
+            Thread reader = new Thread(() -> {
+                try {
+                    String srv;
+                    while ((srv = in.readLine()) != null) {
+                        System.out.println(srv);
+                    }
+                    System.out.println("Server closed the connection.");
+                    System.exit(0);
+                } catch (IOException e) { System.exit(0); }
+            });
+            reader.setDaemon(true);
+            reader.start();
+
+            // send loop
+            String line;
+            while ((line = kb.readLine()) != null) {
+                out.println(line);
+                if ("/quit".equalsIgnoreCase(line)) break;
             }
-        } catch (UnknownHostException e) {
-            System.err.println("Don't know about host " + hostName);
-            System.exit(1);
         } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to " +
-                hostName);
-            System.exit(1);
+            System.err.println("Error: " + e.getMessage());
         }
     }
 }

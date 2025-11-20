@@ -33,53 +33,36 @@
 
 import java.net.*;
 import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class ChatServer {
-
-    /**
-    * This is our reverse case function. You could have simply used toLowerCase
-    * or toUpperCase on the string for a nearly implementation.
-    */
-    public static String reverseCase(String text) {
-        char[] chars = text.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            if (Character.isUpperCase(c))  {
-                chars[i] = Character.toLowerCase(c);
-            }
-            else if (Character.isLowerCase(c)) {
-                chars[i] = Character.toUpperCase(c);
-            }
-        }
-        return new String(chars);
-    }
+    private final int port = 43221;                  // keep or change; see Level 4 notes
+    private final Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
 
     public static void main(String[] args) throws IOException {
+        new ChatServer().start();
+    }
 
-        int portNumber = 43221;
-
-        try (
-            ServerSocket SSLserverSocket =
-                new ServerSocket(portNumber);
-            Socket clientSocket = SSLserverSocket.accept();
-            PrintWriter out =
-                new PrintWriter(clientSocket.getOutputStream(), true);
-            BufferedReader in = new BufferedReader(
-                new InputStreamReader(clientSocket.getInputStream()));
-        ) {
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                // We have our input as a string (from the client) - we know
-                // we need to change, so we apply the function to get a new
-                // version.
-                inputLine = reverseCase(inputLine);
-                // Now we simply send the changed data text back to the client.
-                out.println(inputLine);
+    public void start() throws IOException {
+        try (ServerSocket server = new ServerSocket(port)) {
+            System.out.println("Server listening on " + port);
+            while (true) {
+                Socket s = server.accept();          // one socket per client
+                ClientHandler handler = new ClientHandler(s, this);
+                clients.add(handler);
+                handler.start();
             }
-        } catch (IOException e) {
-            System.out.println("Exception caught when trying to listen on port "
-                + portNumber + " or listening for a connection");
-            System.out.println(e.getMessage());
         }
+    }
+
+    public void broadcast(String msg, ClientHandler exclude) {
+        for (ClientHandler c : clients) {
+            if (c != exclude) c.send(msg);
+        }
+    }
+
+    public void remove(ClientHandler c) {
+        clients.remove(c);
     }
 }
