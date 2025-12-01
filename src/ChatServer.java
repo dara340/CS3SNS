@@ -29,26 +29,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- /*FROM ACTIVITY 2 WEEK 2 */
+/*
+ * Level 2 – ChatServer using SSL/TLS
+ */
 
 import java.net.*;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+
 public class ChatServer {
-    private final int port = 43221;                  // keep or change; see Level 4 notes
+    private final int port = 43221;
     private final Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
 
     public static void main(String[] args) throws IOException {
+        System.setProperty("javax.net.ssl.keyStore",
+                "C:/Users/daraa/OneDrive/Documents/Third Year/SNS/ServerKeyStore.jks");
+        System.setProperty("javax.net.ssl.keyStorePassword", "serverpass");
+
         new ChatServer().start();
     }
 
     public void start() throws IOException {
-        try (ServerSocket server = new ServerSocket(port)) {
-            System.out.println("Server listening on " + port);
+        SSLServerSocketFactory factory =
+                (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+
+        try (SSLServerSocket server =
+                     (SSLServerSocket) factory.createServerSocket(port)) {
+
+            System.out.println("Secure ChatServer listening on port " + port);
+
             while (true) {
-                Socket s = server.accept();          // one socket per client
+                Socket s = server.accept();         
+                System.out.println("Client connected: " + s);
+
                 ClientHandler handler = new ClientHandler(s, this);
                 clients.add(handler);
                 handler.start();
@@ -58,7 +75,9 @@ public class ChatServer {
 
     public void broadcast(String msg, ClientHandler exclude) {
         for (ClientHandler c : clients) {
-            if (c != exclude) c.send(msg);
+            if (c != exclude) {
+                c.send(msg);
+            }
         }
     }
 

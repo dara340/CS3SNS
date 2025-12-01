@@ -29,42 +29,61 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- /*FROM ACTIVITY 1 WEEK 2 - originally, code has been changed since but it was built on the lab solution */
+/* now using SSL */
+
+/* Level 2 – ChatClient using SSL/TLS */
 
 import java.io.*;
-import java.net.*;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 public class ChatClient {
     public static void main(String[] args) {
-        String host = args.length > 0 ? args[0] : "localhost";
-        int    port = args.length > 1 ? Integer.parseInt(args[1]) : 43221;
+        String host = (args.length > 0) ? args[0] : "localhost";
+        int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 43221;
 
-        try (Socket socket = new Socket(host, port)) {
-            System.out.println("Connected to " + host + ":" + port);
+        // Truststore that holds caroot.cer
+        System.setProperty("javax.net.ssl.trustStore", "C:/Users/daraa/OneDrive/Documents/Third Year/SNS/ClientTrustStoreServer.jks");
+        System.setProperty("javax.net.ssl.trustStorePassword", "clientpass");
 
-            BufferedReader in  = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-            PrintWriter    out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-            BufferedReader kb  = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            SSLSocketFactory sf =
+                    (SSLSocketFactory) SSLSocketFactory.getDefault();
 
-            // background reader
-            Thread reader = new Thread(() -> {
-                try {
-                    String srv;
-                    while ((srv = in.readLine()) != null) {
-                        System.out.println(srv);
+            try (SSLSocket socket =
+                         (SSLSocket) sf.createSocket(host, port)) {
+
+                socket.startHandshake();
+
+                System.out.println("Connected securely to " + host + ":" + port);
+
+                BufferedReader in  = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                PrintWriter out = new PrintWriter(
+                        new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+                BufferedReader kb  = new BufferedReader(
+                        new InputStreamReader(System.in));
+
+                Thread reader = new Thread(() -> {
+                    try {
+                        String srv;
+                        while ((srv = in.readLine()) != null) {
+                            System.out.println(srv);
+                        }
+                        System.out.println("Server closed the connection.");
+                        System.exit(0);
+                    } catch (IOException e) {
+                        System.exit(0);
                     }
-                    System.out.println("Server closed the connection.");
-                    System.exit(0);
-                } catch (IOException e) { System.exit(0); }
-            });
-            reader.setDaemon(true);
-            reader.start();
+                });
+                reader.setDaemon(true);
+                reader.start();
 
-            // send loop
-            String line;
-            while ((line = kb.readLine()) != null) {
-                out.println(line);
-                if ("/quit".equalsIgnoreCase(line)) break;
+                String line;
+                while ((line = kb.readLine()) != null) {
+                    out.println(line);
+                    if ("/quit".equalsIgnoreCase(line)) break;
+                }
             }
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
