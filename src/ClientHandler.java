@@ -13,22 +13,30 @@ public class ClientHandler extends Thread {
         this.server  = server;
     }
 
-    @Override public void run() {
+    @Override
+    public void run() {
         try {
-            in  = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+            in  = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), "UTF-8"));
+            out = new PrintWriter(
+                    new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
 
+            // Ask for name
             out.println("Enter your name:");
             String n = in.readLine();
-            if (n != null && !n.isBlank()) name = n.trim();
+            if (n != null && !n.isBlank()) {
+                name = n.trim();
+            }
             server.broadcast(name + " joined.", this);
 
+            // Main chat loop
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.equalsIgnoreCase("/quit")) break;
                 server.broadcast("[" + name + "]: " + line, this);
             }
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             server.remove(this);
             server.broadcast("👋 " + name + " left.", this);
@@ -36,5 +44,7 @@ public class ClientHandler extends Thread {
         }
     }
 
-    public void send(String msg) { out.println(msg); }
+    public void send(String msg) {
+        out.println(msg);
+    }
 }
