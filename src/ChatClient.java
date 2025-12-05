@@ -43,7 +43,7 @@ public class ChatClient {
         int    port = (args.length > 1) ? Integer.parseInt(args[1]) : 43221;
 
         // Truststore that holds caroot.cer
-        System.setProperty("javax.net.ssl.trustStore", "C:/Users/daraa/OneDrive/Documents/Third Year/SNS/ClientTrustStoreServer.jks");
+        System.setProperty("javax.net.ssl.trustStore", "../ClientTrustStoreServer.jks");
         System.setProperty("javax.net.ssl.trustStorePassword", "clientpass");
 
         try {
