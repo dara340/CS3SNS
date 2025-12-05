@@ -46,8 +46,7 @@ public class ChatServer {
     private final Set<ClientHandler> clients = ConcurrentHashMap.newKeySet();
 
     public static void main(String[] args) throws IOException {
-        System.setProperty("javax.net.ssl.keyStore",
-                "C:/Users/daraa/OneDrive/Documents/Third Year/SNS/ServerKeyStore.jks");
+        System.setProperty("javax.net.ssl.keyStore", "../ServerKeyStore.jks");
         System.setProperty("javax.net.ssl.keyStorePassword", "serverpass");
 
         new ChatServer().start();
